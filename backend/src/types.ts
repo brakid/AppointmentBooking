@@ -64,3 +64,7 @@ export class Appointment extends BaseEntity {
   @Field(type => CalendarSlot!)
   calendarSlot!: CalendarSlot
 };
+
+export interface Context {
+  token?: string;
+}

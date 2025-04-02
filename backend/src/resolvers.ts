@@ -1,4 +1,4 @@
-import { Arg, FieldResolver, ID, Int, Mutation, Query, Resolver, Root, type ResolverInterface } from 'type-graphql';
+import { Arg, Authorized, FieldResolver, ID, Int, Mutation, Query, Resolver, Root, type ResolverInterface } from 'type-graphql';
 import { Appointment, CalendarSlot } from './types';
 import { type UUID } from 'crypto';
 import { LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from 'typeorm';
@@ -39,12 +39,9 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
     return new Date(calendarSlot.endTimestamp * 1000);
   }
 
+  @Authorized('ADMIN')
   @Mutation(returns => CalendarSlot)
   async addCalendarSlot(@Arg('adminToken', () => String!) adminToken: string, @Arg('startTime', () => Date!) startTime: Date, @Arg('durationInMinutes', () => Int!, { nullable: true, defaultValue: 30 }) durationInMinutes: number): Promise<CalendarSlot> {
-    if (adminToken !== Bun.env.ADMIN_TOKEN) {
-      throw new Error('Invalid Admin Token');
-    }
-
     const startTimestamp = startTime.getTime() / 1000;
     const endTimestamp = startTimestamp + Duration.seconds.from(Duration.minutes.of(durationInMinutes));
     const oneYearAway = Date.now() / 1000 + Duration.seconds.from(Duration.days.of(365));
