@@ -1,32 +1,32 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { buildSchema, type AuthChecker } from 'type-graphql';
-import { CalendarSlotResolver } from './resolvers';
+import { AppointmentResolver, CalendarSlotResolver, CustomerResolver } from './resolvers';
 import { DataSource } from 'typeorm';
-import { GraphQLError } from 'graphql';
 import type { Context } from './types';
 
 export const dataSource = new DataSource({
-    type: 'sqlite',
-    database: Bun.env.DATABASE || '',
-    entities: ['./src/types.ts'],
-    logging: true,
-    synchronize: true,
+  type: 'sqlite',
+  database: Bun.env.DATABASE || '',
+  entities: ['./src/types.ts'],
+  logging: true,
+  synchronize: true,
 })
 
 try {
-    await dataSource.initialize();
-    console.log('Data Source has been initialized!');
+  await dataSource.initialize();
+  console.log('Data Source has been initialized!');
 } catch (err) {
-    console.error('Error during Data Source initialization:', err);
+  console.error('Error during Data Source initialization:', err);
+  process.exit();
 }
 
-export const adminAuthChecker: AuthChecker<Context> = ({ context: { token } }) => {
-  return (token === Bun.env.ADMIN_TOKEN);
+export const adminAuthChecker: AuthChecker<Context> =  ({ context }): boolean => {
+  return (context.token === Bun.env.ADMIN_TOKEN);
 };
 
 const schema = await buildSchema({
-  resolvers: [CalendarSlotResolver],
+  resolvers: [CustomerResolver, CalendarSlotResolver, AppointmentResolver],
   authChecker: adminAuthChecker
 });
 
@@ -36,7 +36,7 @@ const server = new ApolloServer({
 
 const { url } = await startStandaloneServer(server, {
   listen: { port: 4000 },
-  context: async ({ req, res }) => {
+  context: async ({ req }): Promise<Context> => {
     return { token: req.headers.authorization };
   }
 });

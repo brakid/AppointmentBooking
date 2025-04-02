@@ -3,9 +3,8 @@ import { Field, ID, Int, ObjectType, registerEnumType } from 'type-graphql';
 import { randomUUID, type UUID } from 'crypto';
 
 export enum AppointmentStatus {
-  Available = 'AVAILABLE',
   Reserved = 'RESERVED',
-  Confirmed = 'Confirmed',
+  Confirmed = 'CONFIRMED',
 }
 
 registerEnumType(AppointmentStatus, { name: 'AppointmentStatus' });
@@ -19,12 +18,9 @@ export class Customer extends BaseEntity {
   @Column({ unique: true })
   @Field()
   name!: string
-  @Column({ nullable: true })
-  @Field({ nullable: true })
-  mailAddress?: string
-  @Column({ nullable: true })
-  @Field({ nullable: true })
-  phoneNumber?: string
+  @Column({ unique: true })
+  @Field()
+  emailAddress!: string
 };
 
 @Entity()
