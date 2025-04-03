@@ -70,6 +70,7 @@ export interface Context {
   isAdmin: boolean;
 }
 
-export const ADMIN = 'ADMIN';
-export const USER = 'USER';
-export const ROLES = [ADMIN, USER];
+export enum Roles {
+  ADMIN = 'ADMIN',
+  CUSTOMER = 'CUSTOMER',
+};

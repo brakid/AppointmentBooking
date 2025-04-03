@@ -1,10 +1,22 @@
 import { Arg, Authorized, Ctx, FieldResolver, ID, Int, Mutation, Query, Resolver, Root, type ResolverInterface } from 'type-graphql';
-import { ADMIN, Appointment, AppointmentStatus, CalendarSlot, Customer, USER as CUSTOMER, type Context } from './types';
+import { Roles, Appointment, AppointmentStatus, CalendarSlot, Customer, type Context } from './types';
 import { type UUID } from 'crypto';
 import { In, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from 'typeorm';
 import { Duration } from 'typed-duration';
 import * as EmailValidator from 'email-validator';
 import { generateToken } from './token';
+
+const getCustomerOrThrow = async (context: Context): Promise<Customer> => {
+  if (!context.customerId) {
+    throw new Error('No customer id found');
+  }
+  const customer = await Customer.findOne({ where: { id: context.customerId } });
+  if (!customer) {
+    throw new Error('No customer found');
+  }
+
+  return customer;
+};
 
 @Resolver(of => CalendarSlot)
 export class CustomerResolver {
@@ -67,7 +79,7 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
     return new Date(calendarSlot.endTimestamp * 1000);
   }
 
-  @Authorized(ADMIN)
+  @Authorized(Roles.ADMIN)
   @Mutation(returns => CalendarSlot)
   async createCalendarSlot(@Arg('startTime', () => Date!) startTime: Date, @Arg('durationInMinutes', () => Int!, { nullable: true, defaultValue: 30 }) durationInMinutes: number): Promise<CalendarSlot> {
     const startTimestamp = startTime.getTime() / 1000;
@@ -92,7 +104,7 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
     return await CalendarSlot.create({ startTimestamp, endTimestamp, available: true }).save();
   }
 
-  @Authorized(ADMIN)
+  @Authorized(Roles.ADMIN)
   @Mutation(returns => Boolean)
   async deleteCalendarSlot(@Arg('id', () => ID!) id: UUID): Promise<Boolean> {
     const calendarSlot = await CalendarSlot.findOne({ where: { id } });
@@ -112,16 +124,10 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
 
 @Resolver(of => Appointment)
 export class AppointmentResolver {
-  @Authorized(CUSTOMER)
+  @Authorized(Roles.CUSTOMER)
   @Query(returns => [Appointment])
   async getCustomerAppointments(@Ctx() context: Context, @Arg('statuses', () => [AppointmentStatus], { nullable: false, defaultValue: Object.values(AppointmentStatus) }) appointmentStatus: AppointmentStatus[], @Arg('startTime', () => Date, { nullable: true }) startTime?: Date, @Arg('endTime', () => Date, { nullable: true }) endTime?: Date): Promise<Appointment[]> {
-    if (!context.customerId) {
-      throw new Error('No customer id found');
-    }
-    const customer = await Customer.findOne({ where: { id: context.customerId } });
-    if (!customer) {
-      throw new Error('No customer found');
-    }
+    const customer = await getCustomerOrThrow(context);
     
     const whereClauses: FindOptionsWhere<Appointment> = {};
     whereClauses['customer'] = customer;
@@ -141,7 +147,7 @@ export class AppointmentResolver {
     return appointments;
   }
 
-  @Authorized(ADMIN)
+  @Authorized(Roles.ADMIN)
   @Query(returns => [Appointment])
   async getAppointments(@Arg('statuses', () => [AppointmentStatus], { nullable: false, defaultValue: Object.values(AppointmentStatus) }) appointmentStatus: AppointmentStatus[], @Arg('startTime', () => Date, { nullable: true }) startTime?: Date, @Arg('endTime', () => Date, { nullable: true }) endTime?: Date): Promise<Appointment[]> {
     const whereClauses: FindOptionsWhere<Appointment> = {};
@@ -160,16 +166,10 @@ export class AppointmentResolver {
     return appointments;
   }
 
-  @Authorized(CUSTOMER)
+  @Authorized(Roles.CUSTOMER)
   @Mutation(returns => Appointment)
   async createAppointment(@Ctx() context: Context, @Arg('calendarSlotId', () => ID!) calendarSlotId: UUID): Promise<Appointment> {
-    if (!context.customerId) {
-      throw new Error('No customer id found');
-    }
-    const customer = await Customer.findOne({ where: { id: context.customerId } });
-    if (!customer) {
-      throw new Error('No customer found');
-    }
+    const customer = await getCustomerOrThrow(context);
 
     const calendarSlot = await CalendarSlot.findOne({ where: { id: calendarSlotId } });
     if (!calendarSlot) {
@@ -192,17 +192,11 @@ export class AppointmentResolver {
     return await Appointment.create({ calendarSlot, customer, appointmentStatus: AppointmentStatus.Reserved }).save();
   }
 
-  @Authorized(CUSTOMER)
+  @Authorized(Roles.CUSTOMER)
   @Mutation(returns => Appointment)
   async cancelAppointment(@Ctx() context: Context, @Arg('appointmentId', () => ID!) appointmentId: UUID): Promise<boolean> {
-    if (!context.customerId) {
-      throw new Error('No customer id found');
-    }
-    const customer = await Customer.findOne({ where: { id: context.customerId } });
-    if (!customer) {
-      throw new Error('No customer found');
-    }
-
+    const customer = await getCustomerOrThrow(context);
+    
     const appointment = await Appointment.findOne({ where: { id: appointmentId } });
     if (!appointment) {
       throw new Error('No appointment found');
@@ -221,7 +215,7 @@ export class AppointmentResolver {
     return true;
   }
 
-  @Authorized(ADMIN)
+  @Authorized(Roles.ADMIN)
   @Mutation(returns => Appointment)
   async confirmAppointment(@Arg('id', () => ID!) id: UUID): Promise<Appointment> {
     const appointment = await Appointment.findOne({ where: { id }, relations: { customer: true, calendarSlot: true } });
@@ -237,7 +231,7 @@ export class AppointmentResolver {
     return await appointment.save();
   }
 
-  @Authorized(ADMIN)
+  @Authorized(Roles.ADMIN)
   @Mutation(returns => Appointment)
   async deleteAppointment(@Arg('id', () => ID!) id: UUID): Promise<boolean> {
     const appointment = await Appointment.findOne({ where: { id }, relations: { customer: true, calendarSlot: true } });

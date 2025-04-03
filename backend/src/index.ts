@@ -1,10 +1,9 @@
-import express from 'express';
 import { ApolloServer } from '@apollo/server';
+import { startStandaloneServer, type StandaloneServerContextFunctionArgument } from '@apollo/server/standalone';
 import { buildSchema, type AuthChecker } from 'type-graphql';
 import { AppointmentResolver, CalendarSlotResolver, CustomerResolver } from './resolvers';
 import { DataSource } from 'typeorm';
-import { ADMIN, USER, type Context } from './types';
-import { expressMiddleware, type ExpressContextFunctionArgument } from '@apollo/server/express4';
+import { Roles, type Context } from './types';
 import { decodeToken } from './token';
 
 export const dataSource = new DataSource({
@@ -27,10 +26,10 @@ export const authChecker: AuthChecker<Context> =  ({ context }, roles): boolean 
   if (roles.length === 0 || roles.length > 1) { // invalid case
     return false;
   }
-  if (roles[0] === ADMIN) {
+  if (roles[0] === Roles.ADMIN) {
     return context.isAdmin;
   }
-  if (roles[0] === USER) {
+  if (roles[0] === Roles.CUSTOMER) {
     return !!context.customerId;
   }
   return false;
@@ -44,13 +43,11 @@ const schema = await buildSchema({
 const server = new ApolloServer({
   schema,
 });
-await server.start();
 
-const contextHandler = async ({ req }: ExpressContextFunctionArgument): Promise<Context> => {
+const contextHandler = async ({ req }: StandaloneServerContextFunctionArgument): Promise<Context> => {
   const authorizationHeader = req.headers.authorization || '';
-  console.log(authorizationHeader);
   if (authorizationHeader.startsWith('Bearer')) {
-    const decodedToken = decodeToken(authorizationHeader);
+    const decodedToken = decodeToken(authorizationHeader.replace('Bearer ', ''));
     return {
       customerId: decodedToken.customerId,
       isAdmin: false
@@ -68,12 +65,11 @@ const contextHandler = async ({ req }: ExpressContextFunctionArgument): Promise<
   }
 }
 
-const app = express();
-app.use('/',
-  express.json({ limit: '50mb' }),
-  expressMiddleware(server, { context: contextHandler })
+const { url } = await startStandaloneServer(
+  server, 
+  {
+    context: contextHandler
+  }
 );
 
-app.listen({ port: 4000 }, () =>
-  console.log(`🚀 Server ready at http://localhost:4000`),
-);
+console.log(`🚀 Server ready at ${url}`);
