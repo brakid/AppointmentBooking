@@ -1,9 +1,11 @@
+import express from 'express';
 import { ApolloServer } from '@apollo/server';
-import { startStandaloneServer } from '@apollo/server/standalone';
 import { buildSchema, type AuthChecker } from 'type-graphql';
 import { AppointmentResolver, CalendarSlotResolver, CustomerResolver } from './resolvers';
 import { DataSource } from 'typeorm';
-import type { Context } from './types';
+import { ADMIN, USER, type Context } from './types';
+import { expressMiddleware, type ExpressContextFunctionArgument } from '@apollo/server/express4';
+import { decodeToken } from './token';
 
 export const dataSource = new DataSource({
   type: 'sqlite',
@@ -21,24 +23,57 @@ try {
   process.exit();
 }
 
-export const adminAuthChecker: AuthChecker<Context> =  ({ context }): boolean => {
-  return (context.token === Bun.env.ADMIN_TOKEN);
+export const authChecker: AuthChecker<Context> =  ({ context }, roles): boolean => {
+  if (roles.length === 0 || roles.length > 1) { // invalid case
+    return false;
+  }
+  if (roles[0] === ADMIN) {
+    return context.isAdmin;
+  }
+  if (roles[0] === USER) {
+    return !!context.customerId;
+  }
+  return false;
 };
 
 const schema = await buildSchema({
   resolvers: [CustomerResolver, CalendarSlotResolver, AppointmentResolver],
-  authChecker: adminAuthChecker
+  authChecker
 });
 
 const server = new ApolloServer({
   schema,
 });
+await server.start();
 
-const { url } = await startStandaloneServer(server, {
-  listen: { port: 4000 },
-  context: async ({ req }): Promise<Context> => {
-    return { token: req.headers.authorization };
+const contextHandler = async ({ req }: ExpressContextFunctionArgument): Promise<Context> => {
+  const authorizationHeader = req.headers.authorization || '';
+  console.log(authorizationHeader);
+  if (authorizationHeader.startsWith('Bearer')) {
+    const decodedToken = decodeToken(authorizationHeader);
+    return {
+      customerId: decodedToken.customerId,
+      isAdmin: false
+    };
+  } else {
+    if (authorizationHeader === Bun.env.ADMIN_TOKEN) {
+      return {
+        isAdmin: true
+      };
+    } else {
+      return {
+        isAdmin: false
+      };
+    }
   }
-});
+}
 
-console.log(`🚀  Server ready at: ${url}`);
+const app = express();
+app.use('/',
+  express.json({ limit: '50mb' }),
+  expressMiddleware(server, { context: contextHandler })
+);
+
+app.listen({ port: 4000 }, () =>
+  console.log(`🚀 Server ready at http://localhost:4000`),
+);

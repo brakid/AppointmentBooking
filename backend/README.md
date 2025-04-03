@@ -1,15 +1,5 @@
-# backend
+## Missing
+* admin token currently is passed in plaintext in the Authentication Header
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.1.45. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+## Completed
+* user authentication and login via JWT

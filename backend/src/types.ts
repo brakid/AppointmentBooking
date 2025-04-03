@@ -61,6 +61,15 @@ export class Appointment extends BaseEntity {
   calendarSlot!: CalendarSlot
 };
 
-export interface Context {
-  token?: string;
+export interface Token {
+  customerId: UUID;
 }
+
+export interface Context {
+  customerId?: UUID;
+  isAdmin: boolean;
+}
+
+export const ADMIN = 'ADMIN';
+export const USER = 'USER';
+export const ROLES = [ADMIN, USER];
