@@ -11,6 +11,13 @@
 4. customer can delete appointment & free up the calendar slot
 
 ## Paying for appointments
-* P0: manual tracking
-* P1: integrating payments provider (Stripe?)
-* P2: Blockchain integration: when requesting an appointment - status PENDING_PAYMENT, send money to wallet or contract, backend listens to payment arrival event (need to store sender wallet address of customer or request for appointment id as reference - for contract receiving the payments) - backend sets status to RESERVED & if cancelled - trigger repayment to customer
+* P0: manual tracking (pay at appointment)
+* P1: integrating payments provider (Stripe? Paypal?)
+* P2: Blockchain integration:
+ * when requesting an appointment - status PENDING_PAYMENT
+ * send money to wallet or contract
+ * backend listens to payment arrival event (need to store sender wallet address of customer or request for appointment id as reference - for contract receiving the payments)
+ * backend sets status to RESERVED & if cancelled - trigger repayment to customer
+ * contracts needed:
+  * Escrow Contract: receives payments, sends payment events, keeps money as long as appointment has not taken place, trigger repayment on cancellation
+  * Oracle: add appointment detail into Escrow Contract: allow Escrow to check: has the appointment taken place yet? If yes: money can be withdraw, if no: lock up - to remove trust required
