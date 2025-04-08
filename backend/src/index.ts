@@ -5,24 +5,12 @@ import { AppointmentResolver, CalendarSlotResolver, CustomerResolver } from './r
 import { DataSource } from 'typeorm';
 import { Roles, type Context } from './types';
 import { decodeToken } from './token';
+import cors from 'cors';
+import express from 'express';
+import http from 'http';
+import { expressMiddleware } from '@apollo/server/express4';
 
-export const dataSource = new DataSource({
-  type: 'sqlite',
-  database: Bun.env.DATABASE || '',
-  entities: ['./src/types.ts'],
-  logging: true,
-  synchronize: true,
-})
-
-try {
-  await dataSource.initialize();
-  console.log('Data Source has been initialized!');
-} catch (err) {
-  console.error('Error during Data Source initialization:', err);
-  process.exit();
-}
-
-export const authChecker: AuthChecker<Context> =  ({ context }, roles): boolean => {
+const authChecker: AuthChecker<Context> =  ({ context }, roles): boolean => {
   if (roles.length === 0 || roles.length > 1) { // invalid case
     return false;
   }
@@ -35,15 +23,6 @@ export const authChecker: AuthChecker<Context> =  ({ context }, roles): boolean 
   return false;
 };
 
-const schema = await buildSchema({
-  resolvers: [CustomerResolver, CalendarSlotResolver, AppointmentResolver],
-  authChecker
-});
-
-const server = new ApolloServer({
-  schema,
-});
-
 const contextHandler = async ({ req }: StandaloneServerContextFunctionArgument): Promise<Context> => {
   const authorizationHeader = req.headers.authorization || '';
   if (authorizationHeader.startsWith('Bearer')) {
@@ -53,23 +32,50 @@ const contextHandler = async ({ req }: StandaloneServerContextFunctionArgument):
       isAdmin: false
     };
   } else {
-    if (authorizationHeader === Bun.env.ADMIN_TOKEN) {
-      return {
-        isAdmin: true
-      };
-    } else {
-      return {
-        isAdmin: false
-      };
-    }
+    return {
+      isAdmin: (authorizationHeader === Bun.env.ADMIN_TOKEN)
+    };
   }
+};
+
+const dataSource = new DataSource({
+  type: 'sqlite',
+  database: Bun.env.DATABASE || '',
+  entities: ['./src/types.ts'],
+  logging: true,
+  synchronize: true,
+});
+
+try {
+  await dataSource.initialize();
+  console.log('Data Source has been initialized!');
+} catch (err) {
+  console.error('Error during Data Source initialization:', err);
+  process.exit();
 }
 
-const { url } = await startStandaloneServer(
-  server, 
-  {
-    context: contextHandler
-  }
+const schema = await buildSchema({
+  resolvers: [CustomerResolver, CalendarSlotResolver, AppointmentResolver],
+  authChecker
+});
+
+const app = express();
+const httpServer = http.createServer(app);
+const server = new ApolloServer({
+  schema,
+});
+await server.start();
+
+app.use(
+  '/',
+  cors<cors.CorsRequest>(),
+  express.json(),
+  expressMiddleware(server, {
+    context: contextHandler,
+  }),
 );
 
-console.log(`🚀 Server ready at ${url}`);
+await new Promise<void>((resolve) =>
+  httpServer.listen({ port: 4000 }, resolve),
+);
+console.log(`🚀 Server ready at http://localhost:4000/`);

@@ -5,38 +5,46 @@ import { In, LessThanOrEqual, MoreThanOrEqual, type FindOptionsWhere } from 'typ
 import { Duration } from 'typed-duration';
 import * as EmailValidator from 'email-validator';
 import { generateToken } from './token';
+import { GraphQLError } from 'graphql';
 
 const getCustomerOrThrow = async (context: Context): Promise<Customer> => {
   if (!context.customerId) {
-    throw new Error('No customer id found');
+    throw new GraphQLError('No customer id found');
   }
   const customer = await Customer.findOne({ where: { id: context.customerId } });
   if (!customer) {
-    throw new Error('No customer found');
+    throw new GraphQLError('No customer found');
   }
 
   return customer;
 };
 
-@Resolver(of => CalendarSlot)
+@Resolver(of => Customer)
 export class CustomerResolver {
   @Query(returns => String)
   async login(@Arg('name', () => String!, { nullable: false }) name: string, @Arg('emailAddress', () => String!, { nullable: false }) emailAddress: string): Promise<string> {
     const customer = await Customer.findOne({ where: { name, emailAddress } }) || undefined;
     if (!customer) {
-      throw new Error('No user found');
+      throw new GraphQLError('No user found');
     }
+    return generateToken(customer.id);
+  }
+
+  @Authorized(Roles.CUSTOMER)
+  @Query(returns => String)
+  async refresh(@Ctx() context: Context): Promise<string> {
+    const customer = await getCustomerOrThrow(context);
     return generateToken(customer.id);
   }
 
   @Mutation(returns => String)
   async signup(@Arg('name', () => String!, { nullable: false }) name: string, @Arg('emailAddress', () => String!, { nullable: false }) emailAddress: string): Promise<string> {
     if (!name || name.length < 2) {
-      throw new Error('Invalid name');
+      throw new GraphQLError('Invalid name');
     }
 
     if (!emailAddress || !EmailValidator.validate(emailAddress)) {
-      throw new Error('Invalid email address');
+      throw new GraphQLError('Invalid email address');
     }
     
     const customer = await Customer.create({ name, emailAddress }).save();
@@ -87,18 +95,18 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
     const oneYearAway = Date.now() / 1000 + Duration.seconds.from(Duration.days.of(365));
 
     if (startTimestamp <= Date.now() / 1000 || startTimestamp > oneYearAway) {
-      throw new Error('Invalid start time');
+      throw new GraphQLError('Invalid start time');
     }
 
     if (durationInMinutes <= 0 || durationInMinutes >= 60) {
-      throw new Error('Invalid duration in minutes');
+      throw new GraphQLError('Invalid duration in minutes');
     }
 
     if (await CalendarSlot.findOne({ where: [
         { startTimestamp: LessThanOrEqual(startTimestamp), endTimestamp:  MoreThanOrEqual(startTimestamp) },
         { startTimestamp: LessThanOrEqual(endTimestamp), endTimestamp:  MoreThanOrEqual(endTimestamp) },
       ] })) {
-      throw new Error('Overlaps with other slot');
+      throw new GraphQLError('Overlaps with other slot');
     }
 
     return await CalendarSlot.create({ startTimestamp, endTimestamp, available: true }).save();
@@ -114,7 +122,7 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
 
     const appointment = await Appointment.findOne({ where: { calendarSlot }, relations: { calendarSlot: true } }) || undefined;
     if (appointment) {
-      throw new Error('Calendar Slot has an appointment, delete appointment first');
+      throw new GraphQLError('Calendar Slot has an appointment, delete appointment first');
     }
 
     await calendarSlot.remove();
@@ -173,18 +181,18 @@ export class AppointmentResolver {
 
     const calendarSlot = await CalendarSlot.findOne({ where: { id: calendarSlotId } });
     if (!calendarSlot) {
-      throw new Error('No calendar slot found');
+      throw new GraphQLError('No calendar slot found');
     }
 
     if (!calendarSlot.available) {
-      throw new Error('Calendar slot not available');
+      throw new GraphQLError('Calendar slot not available');
     }
 
     const existingAppointment = await Appointment.findOne({ where: { calendarSlot }, relations: { customer: true, calendarSlot: true } });
     if (existingAppointment) {
       calendarSlot.available = false;
       await calendarSlot.save();
-      throw new Error('Calendar slot not available');
+      throw new GraphQLError('Calendar slot not available');
     }
 
     calendarSlot.available = false;
@@ -199,11 +207,11 @@ export class AppointmentResolver {
     
     const appointment = await Appointment.findOne({ where: { id: appointmentId } });
     if (!appointment) {
-      throw new Error('No appointment found');
+      throw new GraphQLError('No appointment found');
     }
 
     if (appointment.customer.id !== customer.id) {
-      throw new Error('Appointment has different customer');
+      throw new GraphQLError('Appointment has different customer');
     }
 
     const calendarSlot = appointment.calendarSlot;
@@ -220,11 +228,11 @@ export class AppointmentResolver {
   async confirmAppointment(@Arg('id', () => ID!) id: UUID): Promise<Appointment> {
     const appointment = await Appointment.findOne({ where: { id }, relations: { customer: true, calendarSlot: true } });
     if (!appointment) {
-      throw new Error('No appointment found');
+      throw new GraphQLError('No appointment found');
     }
 
     if (appointment.appointmentStatus !== AppointmentStatus.Reserved) {
-      throw new Error('Appointment not ready for confirmation');
+      throw new GraphQLError('Appointment not ready for confirmation');
     }
 
     appointment.appointmentStatus = AppointmentStatus.Confirmed;

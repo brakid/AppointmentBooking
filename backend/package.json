@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@apollo/server": "^4.11.3",
+    "@types/cors": "^2.8.17",
     "@types/jsonwebtoken": "^9.0.9",
+    "cors": "^2.8.5",
     "email-validator": "^2.0.4",
     "express-jwt": "^8.5.1",
     "graphql": "^16.10.0",
