@@ -6,6 +6,7 @@ import { Duration } from 'typed-duration';
 import * as EmailValidator from 'email-validator';
 import { generateToken } from './token';
 import { GraphQLError } from 'graphql';
+import { cancelIfNotPaid, deleteAppointment as delAppointment, notifyCustomer } from './actions';
 
 const getCustomerOrThrow = async (context: Context): Promise<Customer> => {
   if (!context.customerId) {
@@ -114,8 +115,8 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
 
   @Authorized(Roles.ADMIN)
   @Mutation(returns => Boolean)
-  async deleteCalendarSlot(@Arg('id', () => ID!) id: UUID): Promise<Boolean> {
-    const calendarSlot = await CalendarSlot.findOne({ where: { id } });
+  async deleteCalendarSlot(@Arg('calendarSlotId', () => ID!) calendarSlotId: UUID): Promise<Boolean> {
+    const calendarSlot = await CalendarSlot.findOne({ where: { id: calendarSlotId } });
     if (!calendarSlot) {
       return false;
     }
@@ -197,7 +198,12 @@ export class AppointmentResolver {
 
     calendarSlot.available = false;
     await calendarSlot.save();
-    return await Appointment.create({ calendarSlot, customer, appointmentStatus: AppointmentStatus.Reserved }).save();
+    const appointment = await Appointment.create({ calendarSlot, customer, appointmentStatus: AppointmentStatus.PendingPayment }).save();
+    
+    setTimeout(() => cancelIfNotPaid(appointment.id), Duration.milliseconds.from(Duration.minutes.of(10)));
+    notifyCustomer(appointment.id, calendarSlot, AppointmentStatus.PendingPayment);
+
+    return appointment;
   }
 
   @Authorized(Roles.CUSTOMER)
@@ -205,7 +211,7 @@ export class AppointmentResolver {
   async cancelAppointment(@Ctx() context: Context, @Arg('appointmentId', () => ID!) appointmentId: UUID): Promise<boolean> {
     const customer = await getCustomerOrThrow(context);
     
-    const appointment = await Appointment.findOne({ where: { id: appointmentId } });
+    const appointment = await Appointment.findOne({ where: { id: appointmentId }, relations: { customer: true, calendarSlot: true } });
     if (!appointment) {
       throw new GraphQLError('No appointment found');
     }
@@ -220,13 +226,15 @@ export class AppointmentResolver {
     await calendarSlot.save();
     await appointment.remove();
 
+    notifyCustomer(appointmentId, calendarSlot, 'CANCELLED');
+
     return true;
   }
 
   @Authorized(Roles.ADMIN)
   @Mutation(returns => Appointment)
-  async confirmAppointment(@Arg('id', () => ID!) id: UUID): Promise<Appointment> {
-    const appointment = await Appointment.findOne({ where: { id }, relations: { customer: true, calendarSlot: true } });
+  async confirmAppointment(@Arg('appointmentId', () => ID!) appointmentId: UUID): Promise<Appointment> {
+    const appointment = await Appointment.findOne({ where: { id: appointmentId }, relations: { customer: true, calendarSlot: true } });
     if (!appointment) {
       throw new GraphQLError('No appointment found');
     }
@@ -236,22 +244,14 @@ export class AppointmentResolver {
     }
 
     appointment.appointmentStatus = AppointmentStatus.Confirmed;
-    return await appointment.save();
+    const updatedAppointment = await appointment.save();
+    notifyCustomer(appointmentId, appointment.calendarSlot, AppointmentStatus.Confirmed);
+    return updatedAppointment;
   }
 
   @Authorized(Roles.ADMIN)
   @Mutation(returns => Appointment)
-  async deleteAppointment(@Arg('id', () => ID!) id: UUID): Promise<boolean> {
-    const appointment = await Appointment.findOne({ where: { id }, relations: { customer: true, calendarSlot: true } });
-    if (!appointment) {
-      return false;
-    }
-
-    const calendarSlot = appointment.calendarSlot;
-
-    calendarSlot.available = true;
-    await calendarSlot.save();
-    await appointment.remove();
-    return true;
+  async deleteAppointment(@Arg('appointmentId', () => ID!) appointmentId: UUID): Promise<boolean> {
+    return delAppointment(appointmentId);
   }
 }

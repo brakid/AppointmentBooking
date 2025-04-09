@@ -1,0 +1,29 @@
+{
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "caloriesBurnt",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "energyGranted",
+          "type": "uint256"
+        }
+      ],
+      "name": "Proof",
+      "type": "event"
+    }
+  ]
+}

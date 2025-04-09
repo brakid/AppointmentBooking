@@ -3,8 +3,9 @@ import { Field, ID, Int, ObjectType, registerEnumType } from 'type-graphql';
 import { randomUUID, type UUID } from 'crypto';
 
 export enum AppointmentStatus {
-  Reserved = 'RESERVED',
-  Confirmed = 'CONFIRMED',
+  PendingPayment = 'PENDING_PAYMENT', // pre payment - 10 min awaiting time
+  Reserved = 'RESERVED', // paid but not confirmed
+  Confirmed = 'CONFIRMED', // paid and confirmed
 }
 
 registerEnumType(AppointmentStatus, { name: 'AppointmentStatus' });
