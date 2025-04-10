@@ -8,6 +8,9 @@ import { generateToken } from './token';
 import { GraphQLError } from 'graphql';
 import { cancelIfNotPaid, deleteAppointment as delAppointment, notifyCustomer } from './actions';
 
+const ONE_DAY = Duration.seconds.from(Duration.days.of(1));
+const ONE_YEAR = Duration.seconds.from(Duration.days.of(365));
+
 const getCustomerOrThrow = async (context: Context): Promise<Customer> => {
   if (!context.customerId) {
     throw new GraphQLError('No customer id found');
@@ -51,7 +54,7 @@ export class CustomerResolver {
     const customer = await Customer.create({ name, emailAddress }).save();
     return generateToken(customer.id);
   }
-}
+};
 
 @Resolver(of => CalendarSlot)
 export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
@@ -61,9 +64,15 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
     if (startTime) {
       const startTimestamp = startTime.getTime() / 1000;
       whereClauses['startTimestamp'] = MoreThanOrEqual(startTimestamp);
+    } else {
+      const startTimestamp = Date.now() / 1000;
+      whereClauses['startTimestamp'] = MoreThanOrEqual(startTimestamp);
     }
     if (endTime) {
       const endTimestamp = endTime.getTime() / 1000;
+      whereClauses['endTimestamp'] = LessThanOrEqual(endTimestamp);
+    } else {
+      const endTimestamp = Date.now() / 1000 + ONE_DAY;
       whereClauses['endTimestamp'] = LessThanOrEqual(endTimestamp);
     }
 
@@ -93,9 +102,8 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
   async createCalendarSlot(@Arg('startTime', () => Date!) startTime: Date, @Arg('durationInMinutes', () => Int!, { nullable: true, defaultValue: 30 }) durationInMinutes: number): Promise<CalendarSlot> {
     const startTimestamp = startTime.getTime() / 1000;
     const endTimestamp = startTimestamp + Duration.seconds.from(Duration.minutes.of(durationInMinutes));
-    const oneYearAway = Date.now() / 1000 + Duration.seconds.from(Duration.days.of(365));
-
-    if (startTimestamp <= Date.now() / 1000 || startTimestamp > oneYearAway) {
+    
+    if (startTimestamp <= Date.now() / 1000 || startTimestamp > Date.now() / 1000 + ONE_YEAR) {
       throw new GraphQLError('Invalid start time');
     }
 
@@ -129,7 +137,7 @@ export class CalendarSlotResolver implements ResolverInterface<CalendarSlot> {
     await calendarSlot.remove();
     return true;
   }
-}
+};
 
 @Resolver(of => Appointment)
 export class AppointmentResolver {
@@ -148,9 +156,15 @@ export class AppointmentResolver {
     if (startTime) {
       const startTimestamp = startTime.getTime() / 1000;
       appointments = appointments.filter(appointment => appointment.calendarSlot.startTimestamp >= startTimestamp);
+    } else {
+      const startTimestamp = Date.now() / 1000;
+      appointments = appointments.filter(appointment => appointment.calendarSlot.startTimestamp >= startTimestamp);
     }
     if (endTime) {
       const endTimestamp = endTime.getTime() / 1000;
+      appointments = appointments.filter(appointment => appointment.calendarSlot.endTimestamp <= endTimestamp);
+    } else {
+      const endTimestamp = Date.now() / 1000 + Duration.seconds.from(Duration.days.of(1));
       appointments = appointments.filter(appointment => appointment.calendarSlot.endTimestamp <= endTimestamp);
     }
     return appointments;
@@ -167,9 +181,15 @@ export class AppointmentResolver {
     if (startTime) {
       const startTimestamp = startTime.getTime() / 1000;
       appointments = appointments.filter(appointment => appointment.calendarSlot.startTimestamp >= startTimestamp);
+    } else {
+      const startTimestamp = Date.now() / 1000;
+      appointments = appointments.filter(appointment => appointment.calendarSlot.startTimestamp >= startTimestamp);
     }
     if (endTime) {
       const endTimestamp = endTime.getTime() / 1000;
+      appointments = appointments.filter(appointment => appointment.calendarSlot.endTimestamp <= endTimestamp);
+    } else {
+      const endTimestamp = Date.now() / 1000 + Duration.seconds.from(Duration.days.of(1));
       appointments = appointments.filter(appointment => appointment.calendarSlot.endTimestamp <= endTimestamp);
     }
     return appointments;
@@ -187,6 +207,10 @@ export class AppointmentResolver {
 
     if (!calendarSlot.available) {
       throw new GraphQLError('Calendar slot not available');
+    }
+
+    if (calendarSlot.startTimestamp <= Date.now() / 1000 + ONE_DAY || calendarSlot.startTimestamp > Date.now() / 1000 + ONE_YEAR) {
+      throw new GraphQLError('Invalid start time');
     }
 
     const existingAppointment = await Appointment.findOne({ where: { calendarSlot }, relations: { customer: true, calendarSlot: true } });
@@ -254,4 +278,4 @@ export class AppointmentResolver {
   async deleteAppointment(@Arg('appointmentId', () => ID!) appointmentId: UUID): Promise<boolean> {
     return delAppointment(appointmentId);
   }
-}
+};

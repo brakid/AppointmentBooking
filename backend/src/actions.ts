@@ -35,7 +35,7 @@ export const cancelIfNotPaid = async (appointmentId: UUID) => {
 };
 
 export const notifyCustomer = async (appointmentId: UUID, calendarSlot: CalendarSlot, status: AppointmentStatus | 'CANCELLED') => {
-  console.log(`Appointment ${ appointmentId } on ${calendarSlot.startTime} has a new status: ${status}`);
+  console.log(`Appointment ${ appointmentId } on ${new Date(calendarSlot.startTimestamp * 1000)} has a new status: ${status}`);
 };
 
 export const deleteAppointment = async (appointmentId: UUID) => {
