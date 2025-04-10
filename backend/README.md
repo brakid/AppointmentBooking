@@ -3,6 +3,8 @@
 
 ## Completed
 * user authentication and login via JWT
+* payments via ETH smart contract - listener to payments with appointment id
+* deleting appointments if no payment for 10 minutes after creation (TODO: how to make this more robust - we use a timeout - if the server is stopped the timeout is stopped too)
 
 ## Flow
 1. Admin creates available calendar slots for appointments

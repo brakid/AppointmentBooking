@@ -1,6 +1,10 @@
 import { Appointment, AppointmentStatus, CalendarSlot } from "./types";
 import { type UUID } from 'crypto';
 
+export const getPendingPaymentAppointments = async (): Promise<Appointment[]> => {
+  return await Appointment.find({ where: { appointmentStatus: AppointmentStatus.PendingPayment } });
+}
+
 export const processPayment = async (appointmentId: UUID) => {
   const appointment = await Appointment.findOne({ where: { id: appointmentId }, relations: { customer: true, calendarSlot: true } });
   if (!appointment) {
@@ -36,16 +40,17 @@ export const notifyCustomer = async (appointmentId: UUID, calendarSlot: Calendar
 
 export const deleteAppointment = async (appointmentId: UUID) => {
   const appointment = await Appointment.findOne({ where: { id: appointmentId }, relations: { customer: true, calendarSlot: true } });
-    if (!appointment) {
-      return false;
-    }
+  if (!appointment) {
+    return false;
+  }
 
-    const calendarSlot = appointment.calendarSlot;
+  const calendarSlot = appointment.calendarSlot;
 
-    calendarSlot.available = true;
-    await calendarSlot.save();
-    await appointment.remove();
+  calendarSlot.available = true;
+  await calendarSlot.save();
+  await appointment.remove();
 
-    notifyCustomer(appointmentId, calendarSlot, 'CANCELLED');
-    return true;
-}
+  notifyCustomer(appointmentId, calendarSlot, 'CANCELLED');
+  return true;
+};
+

@@ -1,5 +1,5 @@
 import { ApolloServer } from '@apollo/server';
-import { startStandaloneServer, type StandaloneServerContextFunctionArgument } from '@apollo/server/standalone';
+import { type StandaloneServerContextFunctionArgument } from '@apollo/server/standalone';
 import { buildSchema, type AuthChecker } from 'type-graphql';
 import { AppointmentResolver, CalendarSlotResolver, CustomerResolver } from './resolvers';
 import { DataSource } from 'typeorm';
@@ -9,6 +9,7 @@ import cors from 'cors';
 import express from 'express';
 import http from 'http';
 import { expressMiddleware } from '@apollo/server/express4';
+import { initializePaymentListener } from './paymentlistener';
 
 const authChecker: AuthChecker<Context> =  ({ context }, roles): boolean => {
   if (roles.length === 0 || roles.length > 1) { // invalid case
@@ -48,9 +49,11 @@ const dataSource = new DataSource({
 
 try {
   await dataSource.initialize();
-  console.log('Data Source has been initialized!');
+  console.log('Data Source initialized!');
+  await initializePaymentListener();
+  console.log('Payment Listener initialized');
 } catch (err) {
-  console.error('Error during Data Source initialization:', err);
+  console.error('Error during initialization:', err);
   process.exit();
 }
 
