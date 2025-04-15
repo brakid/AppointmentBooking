@@ -1,0 +1,54 @@
+div.calendar {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+div.selector {
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+}
+
+div.weekgrid {
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: 3em repeat(5, 5em);
+    gap: 1px;
+}
+
+div.weekgrid div {
+    border: 1px solid darkgray;
+    margin: 0;
+    padding: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+div.weekgrid .head {
+    font-weight: bolder;
+    border: 1px solid black;
+    text-align: center;
+}
+
+div.weekgrid .notInMonth {
+    color: darkgray;
+}
+
+div.weekgrid .regular {
+    color: black;
+}
+
+div.weekgrid .today {
+    color: darkblue;
+    font-weight: bolder;
+}
+
+div.weekgrid .different {
+    color: #727272;
+}
