@@ -37,5 +37,14 @@ export interface Day {
 };
 
 export interface Slot {
+  id: string;
   title: string;
-}
+};
+
+export interface CalendarSlot {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  durationInMinutes: number;
+  available: boolean;
+};

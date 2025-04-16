@@ -1,14 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 import Calendar from './calendar/Calendar';
-
-
-interface CalendarSlot {
-  id: string,
-  startTime: Date,
-  endTime: Date,
-  durationInMinutes: number,
-  available: boolean
-};
+import { CalendarSlot } from './calendar/types';
+import './style.css';
 
 const toCalendarSlot = (value: any): CalendarSlot => {
   return {
@@ -38,19 +31,13 @@ const App = () => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
-  console.log(data?.getCalendarSlots);
+  const calendarSlots: CalendarSlot[] = data.getCalendarSlots.map(toCalendarSlot);
 
   return (
     <>
-      <ul>
-        { data.getCalendarSlots.map((value, index) => (
-          <li key={ index }>
-            { JSON.stringify(toCalendarSlot(value)) }
-          </li>)) }
-      </ul>
-      <Calendar date={ new Date() } />
+      <Calendar slots={ calendarSlots } />
     </>
   )
 };
 
-export default App
+export default App;

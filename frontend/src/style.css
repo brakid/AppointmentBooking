@@ -1,0 +1,93 @@
+:root {
+  --darkgray: rgba(100, 100, 100, 0.5);
+  --mediumgray: rgba(150, 150, 150, 0.4);
+  --lightgray: rgba(200, 200, 200, 0.2);
+  --highlight: #efb552;
+  --maincolor: darkblue;
+}
+
+body {
+  width: max(80%, 600px);
+  margin: 0 auto;
+  padding: 10px;
+}
+
+footer {
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  text-align: end;
+}
+
+div.calendar {
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  width: max(80%, 600px);
+}
+
+div.selector {
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: max(25%, 300px);
+}
+
+div.selector button {
+  margin: 10px;
+  padding: 5px 20px;
+  border: 1px solid black;
+  border-radius: 3px;
+  box-shadow: 1px 1px var(--mediumgray);
+  background-color: var(--highlight);
+}
+
+div.selector button:active {
+  transform: translateY(1px);
+}
+
+div.weekgrid {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: 3em repeat(6, 5em);
+  gap: 1px;
+}
+
+div.weekgrid div {
+  border: 1px solid var(--darkgray);
+  margin: 0;
+  padding: 10px max(1px, 1%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+div.weekgrid div .smalltext {
+  font-size: small;
+}
+
+div.weekgrid .head {
+  font-weight: bolder;
+  border: 1px solid black;
+  text-align: center;
+  background-color: var(--highlight);
+}
+
+div.weekgrid .notInMonth,
+div.weekgrid .different {
+  background-color: var(--lightgray);
+}
+
+div.weekgrid .regular {
+  color: black;
+}
+
+div.weekgrid .today {
+  border-color: darkblue;
+  font-weight: bolder;
+}
