@@ -1,21 +1,15 @@
 import { gql, useQuery } from '@apollo/client';
+import Login from './Login';
+import Appointments from './Appointments';
 import Calendar from './calendar/Calendar';
 import { CalendarSlot } from './calendar/types';
 import './style.css';
-
-const toCalendarSlot = (value: any): CalendarSlot => {
-  return {
-    id: value.id,
-    startTime: new Date(value.startTime),
-    endTime: new Date(value.endTime),
-    durationInMinutes: value.durationInMinutes,
-    available: value.available
-  }
-}
+import { getDate, toCalendarSlot } from './utils';
+import { useState } from 'react';
 
 const CALENDAR_SLOT_QUERY = gql`
-  query GetAvailableCalendarSlots {
-    getCalendarSlots {
+  query GetAvailableCalendarSlots($startTime: DateTimeISO, $endTime: DateTimeISO) {
+    getCalendarSlots(startTime: $startTime, endTime: $endTime) {
       id
       startTime
       endTime
@@ -26,16 +20,31 @@ const CALENDAR_SLOT_QUERY = gql`
 `;
 
 const App = () => {
-  const { loading, error, data } = useQuery(CALENDAR_SLOT_QUERY);
+  const [startTime] = useState<Date>(getDate(-30));
+  const [endTime] = useState<Date>(getDate(+30));
+
+  const { loading, error, data } = useQuery(CALENDAR_SLOT_QUERY, { variables: { startTime, endTime }});
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
   const calendarSlots: CalendarSlot[] = data.getCalendarSlots.map(toCalendarSlot);
 
+  const callback = async (slotId: string): Promise<void> => {
+    console.log(slotId);
+  };
+
   return (
     <>
-      <Calendar slots={ calendarSlots } />
+      <header><h1>Appointment Management System</h1><Login /></header>
+      <section>
+        <article>
+          <h3>Available Calendar Slots:</h3>
+          <Calendar slots={ calendarSlots } callback={ callback } />
+        </article>
+        <Appointments />
+      </section>
+      <footer>&copy; 2025 <a href='https://hagen-schupp.me'>Hagen Schupp</a></footer>
     </>
   )
 };

@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import '../style.css';
 import { CalendarSlot, Day, DayStatus, Month, Weekday } from './types';
+import { formatTime } from '../utils';
 
 interface CalendarProps {
-  slots: CalendarSlot[]
-};
-
-const formatTime = (hour: number, minutes: number): string => {
-  return `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  slots: CalendarSlot[],
+  callback: (slotId: string) => Promise<void>,
 };
 
 const changeDate = (date: Date, changeYear: number = 0, changeMonth: number = 0): Date => {
@@ -71,7 +69,7 @@ const getDaysArrayForCurrentMonth = (date: Date, today: Date, slots: CalendarSlo
   return daysArray;
 };
 
-const Calendar = ({ slots }: CalendarProps) => {
+const Calendar = ({ slots, callback }: CalendarProps) => {
   const [ selectedDate, setSelectedDate ] = useState<Date>(new Date());
   const [ today ] = useState<Date>(new Date());
   const year = useMemo(() => selectedDate.getUTCFullYear(), [selectedDate]);
@@ -94,7 +92,7 @@ const Calendar = ({ slots }: CalendarProps) => {
         { daysArray.map((day, index) => (
           <div className={ day.status }key={ index }>
             { day.title }
-            { day.slots?.map((slot, index) => (<span className='smalltext' key={ index }>{ slot.title }</span>)) }
+            { day.slots?.map((slot, index) => (<span className='smalltext' key={ index } onClick={ () => callback(slot.id) } title='Create Appointment' >{ slot.title }</span>)) }
           </div>)) }
       </div>
     </div>

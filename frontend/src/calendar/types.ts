@@ -48,3 +48,21 @@ export interface CalendarSlot {
   durationInMinutes: number;
   available: boolean;
 };
+
+export enum AppointmentStatus {
+  Confirmed = 'Confirmed',
+  Reserved = 'Reserved',
+  PendingPayment = 'PendingPayment',
+};
+
+export interface Appointment {
+  id: string;
+  appointmentStatus: AppointmentStatus,
+  calendarSlot: CalendarSlot,
+  customer: Customer
+};
+
+export interface Customer {
+  name: string,
+  email: string,
+};
