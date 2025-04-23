@@ -1,4 +1,4 @@
-import { gql, useQuery } from '@apollo/client';
+import { gql, useApolloClient, useQuery } from '@apollo/client';
 import Login from './Login';
 import Appointments from './Appointments';
 import Calendar from './calendar/Calendar';
@@ -9,7 +9,7 @@ import { useState } from 'react';
 
 const CALENDAR_SLOT_QUERY = gql`
   query GetAvailableCalendarSlots($startTime: DateTimeISO, $endTime: DateTimeISO) {
-    getCalendarSlots(startTime: $startTime, endTime: $endTime) {
+    getCalendarSlots(startTime: $startTime, endTime: $endTime, available: true) {
       id
       startTime
       endTime
@@ -20,6 +20,7 @@ const CALENDAR_SLOT_QUERY = gql`
 `;
 
 const App = () => {
+  const client = useApolloClient();
   const [startTime] = useState<Date>(getDate(-30));
   const [endTime] = useState<Date>(getDate(+30));
 
@@ -31,6 +32,26 @@ const App = () => {
   const calendarSlots: CalendarSlot[] = data.getCalendarSlots.map(toCalendarSlot);
 
   const callback = async (slotId: string): Promise<void> => {
+    try {
+      const response = await client.mutate({ 
+        mutation: gql`
+          mutation CreateAppointment($calendarSlotId: ID!) {
+            createAppointment(calendarSlotId: $calendarSlotId) {
+              id
+            }
+          }
+        `,
+        variables: { 
+          calendarSlotId: slotId
+        }
+      });
+      const id = response.data.createAppointment;
+      console.log(id);
+      client.resetStore();
+    } catch (err) {
+      console.log('Error: ' + err);
+    }
+
     console.log(slotId);
   };
 

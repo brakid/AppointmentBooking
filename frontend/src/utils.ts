@@ -27,7 +27,7 @@ export const toCustomer = (value: any): Customer => {
 };
 
 export const formatTime = (hour: number, minutes: number): string => {
-  return `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  return `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} UTC`;
 };
 
 export const formatDate = (date: Date): string => {

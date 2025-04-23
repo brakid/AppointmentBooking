@@ -1,12 +1,47 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './style.css';
 import { gql, useApolloClient } from '@apollo/client';
+
+const REFRESH_LOGIN = gql`
+  query Refresh {
+   refresh
+  }
+`;
 
 const Login = () => {
   const client = useApolloClient();
   const [ token, setToken ] = useState<string | undefined>(localStorage.getItem('token') || undefined);
   const [ name, setName ] = useState<string>('');
   const [ email, setEmail ] = useState<string>('');
+
+  useEffect(() => {
+    const init = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await client.query({ 
+            query: gql`
+              query Refresh {
+                refresh
+              }
+            `
+          });
+          const token = response.data.refresh;
+          console.log(token);
+          setToken(token);
+          localStorage.setItem('token', token);
+          client.resetStore();
+        } catch (err) {
+          console.log('No valid token - cleaning token from local storage: ' + err);
+          setToken(undefined);
+          localStorage.removeItem('token');
+          client.resetStore();
+        }
+      }
+    };
+
+    init();
+  }, []);
 
   const login = async () => {
     try {
@@ -27,16 +62,28 @@ const Login = () => {
       localStorage.setItem('token', token);
       client.resetStore();
     } catch (err) {
-      console.log(err);
+      console.log('Error - cleaning token from local storage: ' + err);
       setToken(undefined);
+      localStorage.removeItem('token');
+      client.resetStore();
     }
+  };
+
+  const logout = async () => {
+    console.log('Loggin out - cleaning token from local storage');
+    setToken(undefined);
+    localStorage.removeItem('token');
+    client.resetStore();
   };
 
   if (token) {
     return (
-        <>
-            <p>Name: { token.substring(0, 10) }</p>
-        </>
+      <div>
+        <p>Logged in</p>
+        <span>
+          <button onClick={ () => logout() }>Logout</button>
+        </span>
+      </div>
     )
   };
 

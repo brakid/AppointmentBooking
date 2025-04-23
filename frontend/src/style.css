@@ -29,7 +29,13 @@ header div {
   flex-direction: column;
 }
 
+header div p {
+  margin: 0;
+  padding: 0;
+}
+
 header div span {
+  margin-top: 10px;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
@@ -118,4 +124,8 @@ div.weekgrid .regular {
 div.weekgrid .today {
   border-color: darkblue;
   font-weight: bolder;
+}
+
+ul li.past {
+  text-decoration: line-through;
 }

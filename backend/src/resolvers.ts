@@ -231,7 +231,7 @@ export class AppointmentResolver {
   }
 
   @Authorized(Roles.CUSTOMER)
-  @Mutation(returns => Appointment)
+  @Mutation(returns => Boolean)
   async cancelAppointment(@Ctx() context: Context, @Arg('appointmentId', () => ID!) appointmentId: UUID): Promise<boolean> {
     const customer = await getCustomerOrThrow(context);
     
