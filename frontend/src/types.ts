@@ -59,10 +59,4 @@ export interface Appointment {
   id: string;
   appointmentStatus: AppointmentStatus,
   calendarSlot: CalendarSlot,
-  customer: Customer
-};
-
-export interface Customer {
-  name: string,
-  email: string,
 };

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS-Only Modal</title>
+  <style>
+    /* Basic styling for the page */
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+    }
+
+    /* The modal trigger (button) */
+    .modal-trigger {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    /* The modal container (hidden by default) */
+    .modal {
+      visibility: hidden;
+      opacity: 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    /* The modal content */
+    .modal-content {
+      background-color: #fff;
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      border-radius: 5px;
+      position: relative;
+      transform: translateY(-20px);
+      transition: transform 0.3s;
+    }
+
+    /* Close button */
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #888;
+    }
+
+    /* Show the modal when the checkbox is checked */
+    #modal-toggle:checked~.modal {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #modal-toggle:checked~.modal .modal-content {
+      transform: translateY(0);
+    }
+
+    /* Hide the checkbox */
+    #modal-toggle {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- The hidden checkbox that controls the modal -->
+  <input type="checkbox" id="modal-toggle">
+
+  <!-- Modal trigger button -->
+  <label for="modal-toggle" class="modal-trigger">Open Modal</label>
+
+  <!-- The modal dialog -->
+  <div class="modal">
+    <div class="modal-content">
+      <label for="modal-toggle" class="modal-close">&times;</label>
+      <h2>CSS-Only Modal</h2>
+      <p>This is a modal dialog created using only CSS, without any JavaScript.</p>
+      <p>It uses the checkbox hack to toggle visibility.</p>
+      <label for="modal-toggle" class="modal-trigger">Close Modal</label>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-import { Appointment, AppointmentStatus, CalendarSlot, Customer } from './calendar/types';
+import { Appointment, AppointmentStatus, CalendarSlot } from './types';
 
 export const toCalendarSlot = (value: any): CalendarSlot => {
   return {
@@ -15,14 +15,6 @@ export const toAppointment = (value: any): Appointment => {
     id: value.id,
     appointmentStatus: value.appointmentStatus as AppointmentStatus,
     calendarSlot: toCalendarSlot(value.calendarSlot),
-    customer: toCustomer(value.customer),
-  };
-};
-
-export const toCustomer = (value: any): Customer => {
-  return {
-    name: value.name,
-    email: value.emailAddress,
   };
 };
 
@@ -37,4 +29,4 @@ export const formatDate = (date: Date): string => {
 export const getDate = (daysDifference: number): Date => {
   const date = Date.now() + daysDifference * (24 * 60 * 60 * 1000);
   return new Date(date);
-}
+};

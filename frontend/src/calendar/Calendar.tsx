@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import '../style.css';
-import { CalendarSlot, Day, DayStatus, Month, Weekday } from './types';
+import { CalendarSlot, Day, DayStatus, Month, Weekday } from '../types';
 import { formatTime } from '../utils';
 
 interface CalendarProps {
