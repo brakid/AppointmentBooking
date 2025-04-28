@@ -23,3 +23,12 @@
  * contracts needed:
   * Escrow Contract: receives payments, sends payment events, keeps money as long as appointment has not taken place, trigger repayment on cancellation
   * Oracle: add appointment detail into Escrow Contract: allow Escrow to check: has the appointment taken place yet? If yes: money can be withdraw, if no: lock up - to remove trust required
+
+## Design Decisions
+### Keeping track of unpaid appointments (to be cancelled after 10 min)
+* Javascript interval - run an async function that triggers after 10 minutes, checks whether the appointment has been paid or not and cancells it if not paid - issue: restarting the server cancels the interval
+* external Cron job for checking pending appointments: no risk of losing events, but requires a separate system (= higher complexity)
+
+### Notifications
+* e-mails
+* real-time events to user via Websockets or similar
