@@ -30,3 +30,10 @@ export const getDate = (daysDifference: number): Date => {
   const date = Date.now() + daysDifference * (24 * 60 * 60 * 1000);
   return new Date(date);
 };
+
+export const handleError = (error: string): string => {
+  if (error.includes('Access denied')) {
+    return 'You need to be logged in to book an appointment';
+  }
+  return error;
+}

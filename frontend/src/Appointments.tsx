@@ -97,7 +97,7 @@ const Appointments = () => {
       case AppointmentStatus.Reserved:
         return  (<><span>waiting for confirmation</span>&nbsp;<button onClick={ () => cancel(appointment.id) }>Cancel</button></>);
       case AppointmentStatus.PendingPayment:
-        return (<><button title='An Appointment is reserved for 10 minutes before being automatically cancelled' onClick={ () => { pay(appointment.id) } }>Pay via Ethereum: { appointmentPrice.toString() }</button>&nbsp;<button onClick={ () => cancel(appointment.id) }>Cancel</button></>);
+        return (<><button title='An Appointment is reserved for 10 minutes before being automatically cancelled' onClick={ () => { pay(appointment.id) } }>Pay via Ethereum: { appointmentPrice.toString() } Gwei</button>&nbsp;<button onClick={ () => cancel(appointment.id) }>Cancel</button></>);
     }
   };
 

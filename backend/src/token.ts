@@ -3,10 +3,13 @@ import type { Token } from './types';
 import { type UUID } from 'crypto';
 import { GraphQLError } from 'graphql';
 
-export const decodeToken = (token: string): Token => {
+export const decodeToken = (token: string): Token | undefined => {
   try {
     return JSON.parse(JSON.stringify(verify(token, Bun.env.SECRET || '', { algorithms: ['HS512'] }))) as Token;
   } catch (err) {
+    if (JSON.stringify(err).includes('TokenExpiredError')) {
+      return undefined;
+    }
     throw new GraphQLError(JSON.stringify(err));
   }
 };

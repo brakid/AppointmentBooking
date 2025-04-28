@@ -4,8 +4,8 @@ import Appointments from './Appointments';
 import Calendar from './calendar/Calendar';
 import { CalendarSlot } from './types';
 import './style.css';
-import { getDate, toCalendarSlot } from './utils';
-import { createRef, useEffect, useRef, useState } from 'react';
+import { getDate, handleError, toCalendarSlot } from './utils';
+import { useEffect, useState } from 'react';
 import Modal, { ModalProps } from './modal/Modal';
 
 const CALENDAR_SLOT_QUERY = gql`
@@ -26,6 +26,7 @@ const App = () => {
   const [endTime] = useState<Date>(getDate(+30));
   const [modalVisibility, setModalVisibility] = useState<boolean>(false);
   const [modalState, setModalState] = useState<ModalProps>({ isOpen: false, onClose: () => {}, title: '', content: (<p></p>), onConfirm: () => {} });
+  const [showError, setShowError] = useState<string>();
 
   const openModal = (): void => setModalVisibility(true);
   const closeModal = (): void => setModalVisibility(false);
@@ -42,6 +43,11 @@ const App = () => {
   const calendarSlots: CalendarSlot[] = data.getCalendarSlots.map(toCalendarSlot);
 
   const callback = async (slotId: string): Promise<void> => {
+    if (!localStorage.getItem('token')) {
+      setShowError(handleError('Access denied'));
+      return;
+    }
+
     const action = async () => {
       try {
         const response = await client.mutate({ 
@@ -59,8 +65,8 @@ const App = () => {
         const id = response.data.createAppointment;
         console.log(id);
         client.resetStore();
-      } catch (err) {
-        console.log('Error: ' + err);
+      } catch (err: any) {
+        setShowError(handleError(err.message));
       }
     };
 
@@ -73,6 +79,16 @@ const App = () => {
     <>
       <header><h1>Appointment Management System</h1><Login /></header>
       <section>
+        { showError && (<div className='error'>
+          <article>
+            <span className='close' onClick={ () =>  setShowError('') }>
+              <svg className='modal-close-icon' viewBox='0 0 24 24' stroke='currentColor'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12' />
+              </svg>
+            </span> 
+            <p><b>Error:</b> { showError }</p>
+          </article>
+        </div>) }
         <article>
           <h3>Available Calendar Slots:</h3>
           <Calendar slots={ calendarSlots } callback={ callback } />

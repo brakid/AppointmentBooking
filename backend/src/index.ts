@@ -28,15 +28,16 @@ const contextHandler = async ({ req }: StandaloneServerContextFunctionArgument):
   const authorizationHeader = req.headers.authorization || '';
   if (authorizationHeader.startsWith('Bearer')) {
     const decodedToken = decodeToken(authorizationHeader.replace('Bearer ', ''));
-    return {
-      customerId: decodedToken.customerId,
-      isAdmin: false
-    };
-  } else {
-    return {
-      isAdmin: (authorizationHeader === Bun.env.ADMIN_TOKEN)
-    };
+    if (decodedToken) {
+      return {
+        customerId: decodedToken.customerId,
+        isAdmin: false
+      };
+    }
   }
+  return {
+    isAdmin: (authorizationHeader === Bun.env.ADMIN_TOKEN)
+  };
 };
 
 const dataSource = new DataSource({

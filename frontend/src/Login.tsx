@@ -2,12 +2,6 @@ import { useEffect, useState } from 'react';
 import './style.css';
 import { gql, useApolloClient } from '@apollo/client';
 
-const REFRESH_LOGIN = gql`
-  query Refresh {
-   refresh
-  }
-`;
-
 const Login = () => {
   const client = useApolloClient();
   const [ token, setToken ] = useState<string | undefined>(localStorage.getItem('token') || undefined);
@@ -84,7 +78,7 @@ const Login = () => {
           <button onClick={ () => logout() }>Logout</button>
         </span>
       </div>
-    )
+    );
   };
 
   return (
@@ -97,7 +91,7 @@ const Login = () => {
         <button onClick={ () => login() }>Login</button>
       </span>
     </div>
-  )
+  );
 };
 
 export default Login;
