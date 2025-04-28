@@ -6,6 +6,7 @@
   --maincolor: darkblue;
   --alert: rgb(217, 49, 49);
   --alertBackground: rgba(247, 89, 89, 0.4);
+}
 
 body {
   width: max(80%, 600px);
