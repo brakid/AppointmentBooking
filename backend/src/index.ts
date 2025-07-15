@@ -10,6 +10,7 @@ import express from 'express';
 import http from 'http';
 import { expressMiddleware } from '@apollo/server/express4';
 import { initializePaymentListener } from './paymentlistener';
+import { webhookHandler, validateApiKey } from './webhook';
 
 const authChecker: AuthChecker<Context> =  ({ context }, roles): boolean => {
   if (roles.length === 0 || roles.length > 1) { // invalid case
@@ -71,12 +72,20 @@ const server = new ApolloServer({
 await server.start();
 
 app.use(
-  '/',
+  '/graphql',
   cors<cors.CorsRequest>(),
   express.json(),
   expressMiddleware(server, {
     context: contextHandler,
   }),
+);
+
+app.get(
+  '/webhook',
+  cors<cors.CorsRequest>(),
+  express.json(),
+  validateApiKey,
+  webhookHandler
 );
 
 await new Promise<void>((resolve) =>
